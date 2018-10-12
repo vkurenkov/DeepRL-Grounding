@@ -105,3 +105,18 @@ class A3C_LSTM_GA(torch.nn.Module):
         x = torch.cat((hx, time_emb.view(-1, self.time_emb_dim)), 1)
 
         return self.critic_linear(x), self.actor_linear(x), (hx, cx)
+
+
+def get_feature_maps(model, x):
+    '''
+    Totally copypasted from the forward above
+
+    :input model: a3c model
+    :input x: input image
+    :return: returns feature maps for every convolutional layer
+    '''
+    fm1 = F.relu(model.conv1(x))
+    fm2 = F.relu(model.conv2(fm1))
+    fm3 = F.relu(model.conv3(fm2))
+
+    return fm1, fm2, fm3

@@ -3,12 +3,41 @@ import torch
 import torch.nn.functional as F
 import time
 import logging
+import os
+import pickle as pk
 
 import env as grounding_env
 from models import A3C_LSTM_GA
+from models import get_feature_maps
 
 from torch.autograd import Variable
 from constants import *
+
+
+feature_maps = []
+max_steps_to_file = 100
+last_num_steps = 0
+
+
+def save_fms():
+    fn = os.path.join("fms", "fm-" + str(last_num_steps) + ".pkl")
+    with open(fn, mode="wb") as f:
+        pk.dump(feature_maps, f)
+
+
+def update_fms(image, model):
+    global feature_maps
+    global last_num_steps
+
+    fm1, fm2, fm3 = get_feature_maps(model, image)
+    feature_maps.append((fm3))
+
+    if len(feature_maps) >= max_steps_to_file:
+        last_num_steps += len(feature_maps)
+        save_fms()
+        feature_maps = []
+
+        print("Seen steps: {}".format(last_num_steps))
 
 
 def test(rank, args, shared_model):
@@ -73,6 +102,12 @@ def test(rank, args, shared_model):
                  Variable(instruction_idx, volatile=True), (tx, hx, cx)))
         prob = F.softmax(logit)
         action = prob.max(1)[1].data.numpy()
+
+        # Save feature maps
+        if args.feature_maps:
+            if last_num_steps > 20000:
+                break
+            update_fms(Variable(image.unsqueeze(0), volatile=True), model)
 
         (image, _), reward, done,  _ = env.step(action[0])
 

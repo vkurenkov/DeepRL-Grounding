@@ -76,6 +76,7 @@ parser.add_argument('-e', '--evaluate', type=int, default=0,
                     2:Evaluate Zero-shot Generalization (default: 0)""")
 parser.add_argument('--dump-location', type=str, default="./saved/",
                     help='path to dump models and log (default: ./saved/)')
+parser.add_argument("--feature-maps", type=bool, default=False)
 
 if __name__ == '__main__':
     args = parser.parse_args()
